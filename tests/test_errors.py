@@ -7,7 +7,7 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel, ConfigDict
 
-from jmespath_mapper import (
+from spaghettimap import (
     ConfigurationError,
     FieldMappingError,
     MappingConfig,

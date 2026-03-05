@@ -6,7 +6,7 @@ import jmespath.functions
 import pytest
 from pydantic import BaseModel
 
-from jmespath_mapper import FieldMappingError, MappingConfig, Mapper
+from spaghettimap import FieldMappingError, MappingConfig, Mapper
 from tests.conftest import CustomFunctions, SourceUser
 
 

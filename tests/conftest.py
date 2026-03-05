@@ -9,7 +9,7 @@ import jmespath.functions
 import pytest
 from pydantic import BaseModel
 
-from jmespath_mapper import MappingConfig, Mapper
+from spaghettimap import MappingConfig, Mapper
 
 
 # ---------------------------------------------------------------------------

@@ -8,7 +8,7 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from jmespath_mapper import MappingConfig, Mapper
+from spaghettimap import MappingConfig, Mapper
 from tests.conftest import (
     Address,
     ContactInfo,

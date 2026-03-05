@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from jmespath_mapper import ConfigurationError, MappingConfig, Mapper
+from spaghettimap import ConfigurationError, MappingConfig, Mapper
 from tests.conftest import SourceProduct, SourceUser, TargetProduct, TargetUser
 
 
