@@ -1,6 +1,6 @@
 [project]
 name = "spaghettimap"
-version = "0.3.0"
+version = "0.4.0"
 description = "Map Pydantic models safely, using JMESPath"
 readme = "README.md"
 authors = [{ name = "Matt Fowler", email = "matty01fowler@gmail.com" }]

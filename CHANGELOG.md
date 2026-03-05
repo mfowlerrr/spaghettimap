@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.4.0 (2026-03-05)
+
+### Documentation
+
+- Update pyproject.yaml description
+  ([`afdb883`](https://github.com/mfowlerrr/spaghettimap/commit/afdb883d7181dbe8995b6b6d78eacebd95c519de))
+
+### Features
+
+- Update name
+  ([`b12e9ab`](https://github.com/mfowlerrr/spaghettimap/commit/b12e9abd5ce61873516527c1c6c4467f4c26f8e9))
+
+
 ## v0.3.0 (2026-03-05)
 
 ### Chores
