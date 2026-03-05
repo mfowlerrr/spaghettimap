@@ -101,7 +101,9 @@ class MappingConfig:
                 )
             _validate_field_mapping(key, value)
 
-        unknown_fields = [field for field in schema if field not in to_type.model_fields]
+        unknown_fields = [
+            field for field in schema if field not in to_type.model_fields
+        ]
         if unknown_fields:
             raise ConfigurationError(
                 f"Schema contains field(s) not present on target model {to_type.__name__!r}: "

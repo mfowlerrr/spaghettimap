@@ -175,6 +175,7 @@ class Mapper:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _evaluate_field_mapping(
     field_name: str,
     mapping: FieldMapping,

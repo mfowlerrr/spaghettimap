@@ -40,7 +40,9 @@ class TestPydanticNuances:
             )
         )
         user = SourceUser(
-            first_name="A", last_name="B", age=1,
+            first_name="A",
+            last_name="B",
+            age=1,
             contact=ContactInfo(email="valid@example.com"),
             address=Address(street="s", city="c", postcode="p"),
         )
@@ -63,7 +65,9 @@ class TestPydanticNuances:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=Source, to_type=CrossFieldTarget, schema={"a": "x", "b": "y"})
+            MappingConfig(
+                from_type=Source, to_type=CrossFieldTarget, schema={"a": "x", "b": "y"}
+            )
         )
         result = mapper.map(Source(x=3, y=7), CrossFieldTarget)
         assert result.total == 10
@@ -79,7 +83,9 @@ class TestPydanticNuances:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=CoerceSource, to_type=CoerceTarget, schema={"val": "val"})
+            MappingConfig(
+                from_type=CoerceSource, to_type=CoerceTarget, schema={"val": "val"}
+            )
         )
         assert mapper.map(CoerceSource(val="42"), CoerceTarget).val == 42
 
@@ -93,11 +99,17 @@ class TestPydanticNuances:
             MappingConfig(
                 from_type=SourceUser,
                 to_type=AliasedTarget,
-                schema={"full_name": {"expression": lambda d: f"{d['first_name']} {d['last_name']}"}},
+                schema={
+                    "full_name": {
+                        "expression": lambda d: f"{d['first_name']} {d['last_name']}"
+                    }
+                },
             )
         )
         user = SourceUser(
-            first_name="Clara", last_name="Bell", age=22,
+            first_name="Clara",
+            last_name="Bell",
+            age=22,
             contact=ContactInfo(email="c@b.com"),
             address=Address(street="s", city="c", postcode="p"),
         )
@@ -113,10 +125,16 @@ class TestPydanticNuances:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=AliasSource, to_type=SimpleTarget, schema={"name": "user_name"})
+            MappingConfig(
+                from_type=AliasSource,
+                to_type=SimpleTarget,
+                schema={"name": "user_name"},
+            )
         )
         # model_dump() uses Python field names by default
-        assert mapper.map(AliasSource(user_name="charlie"), SimpleTarget).name == "charlie"
+        assert (
+            mapper.map(AliasSource(user_name="charlie"), SimpleTarget).name == "charlie"
+        )
 
     def test_date_field_preserved(self, sample_user):
         class DateTarget(BaseModel):
@@ -124,7 +142,11 @@ class TestPydanticNuances:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=DateTarget, schema={"birth_date": "birth_date"})
+            MappingConfig(
+                from_type=SourceUser,
+                to_type=DateTarget,
+                schema={"birth_date": "birth_date"},
+            )
         )
         assert mapper.map(sample_user, DateTarget).birth_date == date(1994, 6, 15)
 
@@ -141,7 +163,9 @@ class TestPydanticNuances:
             MappingConfig(
                 from_type=SourceUser,
                 to_type=NestedTarget,
-                schema={"info": {"expression": "{email: contact.email, city: address.city}"}},
+                schema={
+                    "info": {"expression": "{email: contact.email, city: address.city}"}
+                },
             )
         )
         result = mapper.map(sample_user, NestedTarget)
@@ -157,7 +181,9 @@ class TestPydanticNuances:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=T, schema={"weights": "tags[*].weight"})
+            MappingConfig(
+                from_type=SourceUser, to_type=T, schema={"weights": "tags[*].weight"}
+            )
         )
         assert mapper.map(sample_user, T).weights == [2.0, 1.5]
 
@@ -204,12 +230,21 @@ class TestProductMapping:
                 schema={
                     "id": "product_id",
                     "name": "title",
-                    "price_formatted": {"expression": "price", "transform": lambda p: f"£{p:.2f}"},
+                    "price_formatted": {
+                        "expression": "price",
+                        "transform": lambda p: f"£{p:.2f}",
+                    },
                 },
             )
         )
-        assert mapper.map(sample_product, TargetProductSummary).price_formatted == "£29.99"
+        assert (
+            mapper.map(sample_product, TargetProductSummary).price_formatted == "£29.99"
+        )
 
     def test_no_categories_returns_none_for_first_element(self):
-        product = SourceProduct(product_id="p3", title="Bare", price=1.0, stock=5, categories=[])
-        assert self._product_mapper().map(product, TargetProduct).primary_category is None
+        product = SourceProduct(
+            product_id="p3", title="Bare", price=1.0, stock=5, categories=[]
+        )
+        assert (
+            self._product_mapper().map(product, TargetProduct).primary_category is None
+        )

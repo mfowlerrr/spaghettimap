@@ -109,8 +109,12 @@ class TestMapperConfigManagement:
 
     def test_add_config_replaces_existing(self):
         mapper = Mapper()
-        config1 = MappingConfig(from_type=SourceUser, to_type=TargetUser, schema={"age": "age"})
-        config2 = MappingConfig(from_type=SourceUser, to_type=TargetUser, schema={"email": "contact.email"})
+        config1 = MappingConfig(
+            from_type=SourceUser, to_type=TargetUser, schema={"age": "age"}
+        )
+        config2 = MappingConfig(
+            from_type=SourceUser, to_type=TargetUser, schema={"email": "contact.email"}
+        )
         mapper.add_config(config1)
         mapper.add_config(config2)
         assert mapper.get_config(SourceUser, TargetUser) is config2
@@ -135,7 +139,9 @@ class TestMapperConfigManagement:
 
     def test_repr_contains_config_pairs(self):
         mapper = Mapper()
-        mapper.add_config(MappingConfig(from_type=SourceUser, to_type=TargetUser, schema={}))
+        mapper.add_config(
+            MappingConfig(from_type=SourceUser, to_type=TargetUser, schema={})
+        )
         r = repr(mapper)
         assert "SourceUser" in r
         assert "TargetUser" in r

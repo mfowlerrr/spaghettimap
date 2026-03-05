@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import BaseModel
 
-from jmespath_mapper import ConfigurationError, FieldMappingError, MappingConfig, Mapper
+from jmespath_mapper import FieldMappingError, MappingConfig, Mapper
 from tests.conftest import ContactInfo, Address, SourceUser, TargetUser
 
 
@@ -43,7 +43,9 @@ class TestBasicJmespathMapping:
         result = basic_mapper.map(inactive, TargetUser)
         assert result.is_active is False
 
-    def test_registered_base_source_config_maps_subclass_source(self, basic_mapper, sample_user):
+    def test_registered_base_source_config_maps_subclass_source(
+        self, basic_mapper, sample_user
+    ):
         class ExtendedSourceUser(SourceUser):
             internal_id: str = "u-1"
 
@@ -51,13 +53,17 @@ class TestBasicJmespathMapping:
         result = basic_mapper.map(extended, TargetUser)
         assert result.full_name == "Jane Doe"
 
-    def test_jmespath_expression_not_recompiled_per_map_call(self, sample_user, monkeypatch):
+    def test_jmespath_expression_not_recompiled_per_map_call(
+        self, sample_user, monkeypatch
+    ):
         class AgeTarget(BaseModel):
             age: int
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=AgeTarget, schema={"age": "age"})
+            MappingConfig(
+                from_type=SourceUser, to_type=AgeTarget, schema={"age": "age"}
+            )
         )
 
         def fail_compile(_: str):
@@ -113,7 +119,9 @@ class TestCallableMappings:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=CaptureTarget, schema={"data": capture})
+            MappingConfig(
+                from_type=SourceUser, to_type=CaptureTarget, schema={"data": capture}
+            )
         )
         mapper.map(sample_user, CaptureTarget)
         assert received[0]["first_name"] == "Jane"
@@ -144,7 +152,9 @@ class TestDictMappings:
             MappingConfig(
                 from_type=SourceUser,
                 to_type=TransformTarget,
-                schema={"upper_name": {"expression": "first_name", "transform": str.upper}},
+                schema={
+                    "upper_name": {"expression": "first_name", "transform": str.upper}
+                },
             )
         )
         result = mapper.map(sample_user, TransformTarget)
@@ -197,7 +207,9 @@ class TestDictMappings:
             MappingConfig(
                 from_type=SourceUser,
                 to_type=UserHandleTarget,
-                schema={"handle": {"expression": "contact.email", "transform": strip_domain}},
+                schema={
+                    "handle": {"expression": "contact.email", "transform": strip_domain}
+                },
             )
         )
         result = mapper.map(sample_user, UserHandleTarget)
@@ -227,6 +239,7 @@ class TestPassthroughMapping:
 
     def test_pure_passthrough_no_schema(self):
         """Omitting schema auto-maps all matching field names."""
+
         class Source(BaseModel):
             age: int
             score: float
@@ -246,6 +259,7 @@ class TestPassthroughMapping:
 
     def test_passthrough_skips_fields_not_in_source(self):
         """Target fields absent from source fall back to pydantic defaults."""
+
         class Source(BaseModel):
             age: int
 
@@ -261,13 +275,14 @@ class TestPassthroughMapping:
 
     def test_passthrough_with_one_override(self):
         """schema covers only the renamed field; rest are auto-mapped."""
+
         class Source(BaseModel):
             first_name: str
             age: int
             score: float
 
         class Target(BaseModel):
-            name: str   # renamed
+            name: str  # renamed
             age: int
             score: float
 
@@ -287,6 +302,7 @@ class TestPassthroughMapping:
 
     def test_passthrough_schema_field_takes_priority_over_auto(self):
         """Explicit schema entry is never overwritten by passthrough."""
+
         class Source(BaseModel):
             value: str
 
@@ -303,10 +319,11 @@ class TestPassthroughMapping:
             )
         )
         result = mapper.map(Source(value="hello"), Target)
-        assert result.value == "HELLO"   # transform applied, not raw passthrough
+        assert result.value == "HELLO"  # transform applied, not raw passthrough
 
     def test_passthrough_enabled_when_schema_is_none(self):
         """Passing schema=None explicitly also enables passthrough."""
+
         class Source(BaseModel):
             x: int
 
@@ -319,6 +336,7 @@ class TestPassthroughMapping:
 
     def test_passthrough_false_does_not_auto_map(self):
         """Default passthrough=False (explicit schema) keeps current behaviour."""
+
         class Source(BaseModel):
             age: int
 
@@ -329,11 +347,12 @@ class TestPassthroughMapping:
         # schema={} with passthrough=False → nothing mapped → pydantic default used
         mapper.add_config(MappingConfig(from_type=Source, to_type=Target, schema={}))
         result = mapper.map(Source(age=99), Target)
-        assert result.age == 0   # NOT passed through
+        assert result.age == 0  # NOT passed through
 
     def test_mapping_config_repr_shows_passthrough(self):
         class A(BaseModel):
             x: int
+
         class B(BaseModel):
             x: int
 

@@ -18,7 +18,9 @@ class MappingError(JmespathMapperError):
 class FieldMappingError(MappingError):
     """Raised when mapping a specific field fails."""
 
-    def __init__(self, field: str, reason: str, source_exception: BaseException | None = None) -> None:
+    def __init__(
+        self, field: str, reason: str, source_exception: BaseException | None = None
+    ) -> None:
         self.field = field
         self.reason = reason
         message = f"Failed to map field '{field}': {reason}"

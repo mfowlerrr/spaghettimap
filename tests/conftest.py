@@ -7,7 +7,7 @@ from typing import Optional
 
 import jmespath.functions
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from jmespath_mapper import MappingConfig, Mapper
 

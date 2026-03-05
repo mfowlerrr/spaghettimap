@@ -13,7 +13,9 @@ from tests.conftest import SourceUser
 
 def _make_mapper(from_type, to_type, schema) -> Mapper:
     mapper = Mapper()
-    mapper.add_config(MappingConfig(from_type=from_type, to_type=to_type, schema=schema))
+    mapper.add_config(
+        MappingConfig(from_type=from_type, to_type=to_type, schema=schema)
+    )
     return mapper
 
 
@@ -22,14 +24,18 @@ class TestJmespathBuiltinFunctions:
         class T(BaseModel):
             tag_count: int
 
-        result = _make_mapper(SourceUser, T, {"tag_count": "length(tags)"}).map(sample_user, T)
+        result = _make_mapper(SourceUser, T, {"tag_count": "length(tags)"}).map(
+            sample_user, T
+        )
         assert result.tag_count == 2
 
     def test_length_returns_zero_for_empty_array(self):
         from tests.conftest import ContactInfo, Address
 
         user = SourceUser(
-            first_name="A", last_name="B", age=20,
+            first_name="A",
+            last_name="B",
+            age=20,
             contact=ContactInfo(email="a@b.com"),
             address=Address(street="s", city="c", postcode="p"),
         )
@@ -44,56 +50,72 @@ class TestJmespathBuiltinFunctions:
         class T(BaseModel):
             sorted_tags: list[str]
 
-        result = _make_mapper(SourceUser, T, {"sorted_tags": "sort(tags[*].name)"}).map(sample_user, T)
+        result = _make_mapper(SourceUser, T, {"sorted_tags": "sort(tags[*].name)"}).map(
+            sample_user, T
+        )
         assert result.sorted_tags == ["jmespath", "python"]
 
     def test_max_by(self, sample_user):
         class T(BaseModel):
             heaviest_tag: str
 
-        result = _make_mapper(SourceUser, T, {"heaviest_tag": "max_by(tags, &weight).name"}).map(sample_user, T)
+        result = _make_mapper(
+            SourceUser, T, {"heaviest_tag": "max_by(tags, &weight).name"}
+        ).map(sample_user, T)
         assert result.heaviest_tag == "python"
 
     def test_min_by(self, sample_user):
         class T(BaseModel):
             lightest_tag: str
 
-        result = _make_mapper(SourceUser, T, {"lightest_tag": "min_by(tags, &weight).name"}).map(sample_user, T)
+        result = _make_mapper(
+            SourceUser, T, {"lightest_tag": "min_by(tags, &weight).name"}
+        ).map(sample_user, T)
         assert result.lightest_tag == "jmespath"
 
     def test_contains(self, sample_user):
         class T(BaseModel):
             has_python_tag: bool
 
-        result = _make_mapper(SourceUser, T, {"has_python_tag": "contains(tags[*].name, 'python')"}).map(sample_user, T)
+        result = _make_mapper(
+            SourceUser, T, {"has_python_tag": "contains(tags[*].name, 'python')"}
+        ).map(sample_user, T)
         assert result.has_python_tag is True
 
     def test_join(self, sample_user):
         class T(BaseModel):
             tag_csv: str
 
-        result = _make_mapper(SourceUser, T, {"tag_csv": "join(', ', tags[*].name)"}).map(sample_user, T)
+        result = _make_mapper(
+            SourceUser, T, {"tag_csv": "join(', ', tags[*].name)"}
+        ).map(sample_user, T)
         assert result.tag_csv == "python, jmespath"
 
     def test_keys_on_nested_dict(self, sample_user):
         class T(BaseModel):
             meta_keys: list[str]
 
-        result = _make_mapper(SourceUser, T, {"meta_keys": "keys(metadata)"}).map(sample_user, T)
+        result = _make_mapper(SourceUser, T, {"meta_keys": "keys(metadata)"}).map(
+            sample_user, T
+        )
         assert result.meta_keys == ["role"]
 
     def test_values_on_nested_dict(self, sample_user):
         class T(BaseModel):
             meta_values: list[str]
 
-        result = _make_mapper(SourceUser, T, {"meta_values": "values(metadata)"}).map(sample_user, T)
+        result = _make_mapper(SourceUser, T, {"meta_values": "values(metadata)"}).map(
+            sample_user, T
+        )
         assert result.meta_values == ["admin"]
 
     def test_to_string(self, sample_user):
         class T(BaseModel):
             age_str: str
 
-        result = _make_mapper(SourceUser, T, {"age_str": "to_string(age)"}).map(sample_user, T)
+        result = _make_mapper(SourceUser, T, {"age_str": "to_string(age)"}).map(
+            sample_user, T
+        )
         assert result.age_str == "30"
 
     def test_to_number(self):
@@ -103,14 +125,18 @@ class TestJmespathBuiltinFunctions:
         class NumTarget(BaseModel):
             val: float
 
-        result = _make_mapper(NumSource, NumTarget, {"val": "to_number(val)"}).map(NumSource(val="3.14"), NumTarget)
+        result = _make_mapper(NumSource, NumTarget, {"val": "to_number(val)"}).map(
+            NumSource(val="3.14"), NumTarget
+        )
         assert result.val == pytest.approx(3.14)
 
     def test_type_function(self, sample_user):
         class T(BaseModel):
             age_type: str
 
-        result = _make_mapper(SourceUser, T, {"age_type": "type(age)"}).map(sample_user, T)
+        result = _make_mapper(SourceUser, T, {"age_type": "type(age)"}).map(
+            sample_user, T
+        )
         assert result.age_type == "number"
 
     def test_not_null_filter(self):
@@ -157,7 +183,9 @@ class TestJmespathFilterAndMultiselect:
         class T(BaseModel):
             heavy_tags: list[str]
 
-        result = _make_mapper(SourceUser, T, {"heavy_tags": "tags[?weight > `1.5`].name"}).map(sample_user, T)
+        result = _make_mapper(
+            SourceUser, T, {"heavy_tags": "tags[?weight > `1.5`].name"}
+        ).map(sample_user, T)
         assert result.heavy_tags == ["python"]
 
     def test_multi_select_hash(self, sample_user):
@@ -173,21 +201,27 @@ class TestJmespathFilterAndMultiselect:
         class T(BaseModel):
             pair: list
 
-        result = _make_mapper(SourceUser, T, {"pair": "[first_name, last_name]"}).map(sample_user, T)
+        result = _make_mapper(SourceUser, T, {"pair": "[first_name, last_name]"}).map(
+            sample_user, T
+        )
         assert result.pair == ["Jane", "Doe"]
 
     def test_pipe_expression(self, sample_user):
         class T(BaseModel):
             tag_count: int
 
-        result = _make_mapper(SourceUser, T, {"tag_count": "tags[*].name | length(@)"}).map(sample_user, T)
+        result = _make_mapper(
+            SourceUser, T, {"tag_count": "tags[*].name | length(@)"}
+        ).map(sample_user, T)
         assert result.tag_count == 2
 
     def test_wildcard_object_values(self, sample_user):
         class T(BaseModel):
             meta_vals: list[str]
 
-        result = _make_mapper(SourceUser, T, {"meta_vals": "metadata.*"}).map(sample_user, T)
+        result = _make_mapper(SourceUser, T, {"meta_vals": "metadata.*"}).map(
+            sample_user, T
+        )
         assert result.meta_vals == ["admin"]
 
     def test_or_expression_fallback(self):

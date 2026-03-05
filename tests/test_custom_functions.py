@@ -6,7 +6,7 @@ import jmespath.functions
 import pytest
 from pydantic import BaseModel
 
-from jmespath_mapper import ConfigurationError, FieldMappingError, MappingConfig, Mapper
+from jmespath_mapper import FieldMappingError, MappingConfig, Mapper
 from tests.conftest import CustomFunctions, SourceUser
 
 
@@ -79,6 +79,7 @@ class TestCustomJmespathFunctions:
 # Shared helpers for error tests
 # ---------------------------------------------------------------------------
 
+
 class _SimpleSource(BaseModel):
     name: str
     age: int
@@ -109,6 +110,7 @@ class TestCustomFunctionErrors:
 
     def test_function_raises_internally_wraps_as_field_mapping_error(self):
         """RuntimeError inside _func_* body → FieldMappingError."""
+
         class BoomFunctions(jmespath.functions.Functions):
             @jmespath.functions.signature({"types": ["string"]})
             def _func_boom(self, value: str) -> str:
@@ -119,6 +121,7 @@ class TestCustomFunctionErrors:
 
     def test_function_raises_internally_preserves_original_cause(self):
         """The original RuntimeError is available as __cause__."""
+
         class BoomFunctions(jmespath.functions.Functions):
             @jmespath.functions.signature({"types": ["string"]})
             def _func_boom(self, value: str) -> str:
@@ -132,6 +135,7 @@ class TestCustomFunctionErrors:
 
     def test_function_raises_internally_carries_field_name(self):
         """FieldMappingError.field is set to the target field name."""
+
         class BoomFunctions(jmespath.functions.Functions):
             @jmespath.functions.signature({"types": ["string"]})
             def _func_boom(self, value: str) -> str:
@@ -144,6 +148,7 @@ class TestCustomFunctionErrors:
 
     def test_wrong_argument_type_raises_field_mapping_error(self):
         """Passing an int to a string-typed custom function → FieldMappingError."""
+
         class UpperFunctions(jmespath.functions.Functions):
             @jmespath.functions.signature({"types": ["string"]})
             def _func_upper(self, value: str) -> str:
@@ -155,6 +160,7 @@ class TestCustomFunctionErrors:
 
     def test_wrong_argument_count_raises_field_mapping_error(self):
         """Calling a 2-arg function with 1 arg → FieldMappingError."""
+
         class ConcatFunctions(jmespath.functions.Functions):
             @jmespath.functions.signature({"types": ["string"]}, {"types": ["string"]})
             def _func_concat(self, a: str, b: str) -> str:
@@ -166,7 +172,9 @@ class TestCustomFunctionErrors:
     def test_unknown_function_name_raises_field_mapping_error(self):
         """Calling a function not defined on the Functions instance → FieldMappingError."""
         with pytest.raises(FieldMappingError, match="Unknown function: nonexistent"):
-            _mapper_with("nonexistent(name)", CustomFunctions()).map(_SOURCE, _SimpleTarget)
+            _mapper_with("nonexistent(name)", CustomFunctions()).map(
+                _SOURCE, _SimpleTarget
+            )
 
     def test_custom_function_used_without_registering_raises_field_mapping_error(self):
         """
@@ -176,10 +184,13 @@ class TestCustomFunctionErrors:
         """
         # 'upper' is not a built-in jmespath function
         with pytest.raises(FieldMappingError, match="Unknown function: upper"):
-            _mapper_with("upper(name)", custom_functions=None).map(_SOURCE, _SimpleTarget)
+            _mapper_with("upper(name)", custom_functions=None).map(
+                _SOURCE, _SimpleTarget
+            )
 
     def test_custom_function_error_message_contains_expression(self):
         """The FieldMappingError message includes the failing JMESPath expression."""
+
         class BoomFunctions(jmespath.functions.Functions):
             @jmespath.functions.signature({"types": ["string"]})
             def _func_boom(self, value: str) -> str:
