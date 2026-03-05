@@ -121,6 +121,11 @@ class Mapper:
             for field, mapping in config.schema.items()
         }
 
+        if config.passthrough:
+            for field_name in to_type.model_fields:
+                if field_name not in result and field_name in source_dict:
+                    result[field_name] = source_dict[field_name]
+
         try:
             return to_type.model_validate(result)
         except ValidationError as exc:

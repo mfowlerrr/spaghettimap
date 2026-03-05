@@ -34,7 +34,9 @@ class MappingConfig:
     to_type:
         The target pydantic ``BaseModel`` subclass.
     schema:
-        A mapping of *target field name* → field mapping.
+        A mapping of *target field name* → field mapping.  Optional – if
+        omitted (or ``None``), *passthrough* is automatically enabled so that
+        all target fields are auto-mapped from source fields of the same name.
 
         Each value may be:
 
@@ -45,6 +47,13 @@ class MappingConfig:
         * **dict** – must contain an ``"expression"`` key (``str`` or
           ``Callable``) and an optional ``"transform"`` key (``Callable``)
           applied to the extracted value after the expression is evaluated.
+
+    passthrough:
+        When ``True``, any target field *not* covered by *schema* is
+        automatically filled from the source field with the **same name**
+        (if one exists).  Fields already produced by *schema* are never
+        overwritten.  Defaults to ``False`` unless *schema* is omitted/``None``,
+        in which case it is set to ``True`` automatically.
 
     custom_functions:
         An optional instance of a :class:`jmespath.functions.Functions`
@@ -62,8 +71,9 @@ class MappingConfig:
         self,
         from_type: type[BaseModel],
         to_type: type[BaseModel],
-        schema: dict[str, FieldMapping],
+        schema: dict[str, FieldMapping] | None = None,
         custom_functions: jmespath.functions.Functions | None = None,
+        passthrough: bool = False,
     ) -> None:
         if not _is_basemodel_subclass(from_type):
             raise ConfigurationError(
@@ -73,7 +83,11 @@ class MappingConfig:
             raise ConfigurationError(
                 f"'to_type' must be a pydantic BaseModel subclass, got {to_type!r}"
             )
-        if not isinstance(schema, dict):
+        if schema is None:
+            # No schema provided → enable passthrough automatically.
+            schema = {}
+            passthrough = True
+        elif not isinstance(schema, dict):
             raise ConfigurationError(
                 f"'schema' must be a dict, got {type(schema).__name__!r}"
             )
@@ -96,6 +110,7 @@ class MappingConfig:
         self.from_type = from_type
         self.to_type = to_type
         self.schema = schema
+        self.passthrough = passthrough
         self.custom_functions = custom_functions
 
     def __repr__(self) -> str:
@@ -103,7 +118,8 @@ class MappingConfig:
             f"MappingConfig("
             f"from_type={self.from_type.__name__!r}, "
             f"to_type={self.to_type.__name__!r}, "
-            f"fields={list(self.schema.keys())!r})"
+            f"fields={list(self.schema.keys())!r}, "
+            f"passthrough={self.passthrough!r})"
         )
 
 
