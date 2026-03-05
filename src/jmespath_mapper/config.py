@@ -1,0 +1,136 @@
+"""MappingConfig definition and schema validation."""
+
+from __future__ import annotations
+
+from typing import Any, Callable
+
+import jmespath.functions
+from pydantic import BaseModel
+
+from .exceptions import ConfigurationError
+
+# A schema value can be:
+#   - str                        → JMESPath expression
+#   - Callable[[dict], Any]      → Python function receiving the source model dict
+#   - dict                       → {"expression": str | Callable, "transform": Callable (optional)}
+FieldMapping = str | Callable[..., Any] | dict[str, Any]
+
+
+def _is_basemodel_subclass(typ: Any) -> bool:
+    try:
+        return isinstance(typ, type) and issubclass(typ, BaseModel)
+    except TypeError:
+        return False
+
+
+class MappingConfig:
+    """
+    Configuration describing how to map from one pydantic model type to another.
+
+    Parameters
+    ----------
+    from_type:
+        The source pydantic ``BaseModel`` subclass.
+    to_type:
+        The target pydantic ``BaseModel`` subclass.
+    schema:
+        A mapping of *target field name* → field mapping.
+
+        Each value may be:
+
+        * **str** – a JMESPath expression evaluated against the source model
+          serialised to a plain ``dict``.
+        * **Callable[[dict], Any]** – a Python callable that receives the full
+          source dict and returns the field value.
+        * **dict** – must contain an ``"expression"`` key (``str`` or
+          ``Callable``) and an optional ``"transform"`` key (``Callable``)
+          applied to the extracted value after the expression is evaluated.
+
+    custom_functions:
+        An optional instance of a :class:`jmespath.functions.Functions`
+        subclass that provides additional JMESPath functions available to
+        *all* expressions in this config.
+
+    Raises
+    ------
+    ConfigurationError
+        If ``from_type`` or ``to_type`` are not pydantic ``BaseModel``
+        subclasses, or if any schema value has an unsupported type.
+    """
+
+    def __init__(
+        self,
+        from_type: type[BaseModel],
+        to_type: type[BaseModel],
+        schema: dict[str, FieldMapping],
+        custom_functions: jmespath.functions.Functions | None = None,
+    ) -> None:
+        if not _is_basemodel_subclass(from_type):
+            raise ConfigurationError(
+                f"'from_type' must be a pydantic BaseModel subclass, got {from_type!r}"
+            )
+        if not _is_basemodel_subclass(to_type):
+            raise ConfigurationError(
+                f"'to_type' must be a pydantic BaseModel subclass, got {to_type!r}"
+            )
+        if not isinstance(schema, dict):
+            raise ConfigurationError(
+                f"'schema' must be a dict, got {type(schema).__name__!r}"
+            )
+
+        for key, value in schema.items():
+            if not isinstance(key, str):
+                raise ConfigurationError(
+                    f"All schema keys must be strings; got key {key!r} of type {type(key).__name__!r}"
+                )
+            _validate_field_mapping(key, value)
+
+        if custom_functions is not None and not isinstance(
+            custom_functions, jmespath.functions.Functions
+        ):
+            raise ConfigurationError(
+                "'custom_functions' must be an instance of jmespath.functions.Functions "
+                f"(or a subclass), got {type(custom_functions).__name__!r}"
+            )
+
+        self.from_type = from_type
+        self.to_type = to_type
+        self.schema = schema
+        self.custom_functions = custom_functions
+
+    def __repr__(self) -> str:
+        return (
+            f"MappingConfig("
+            f"from_type={self.from_type.__name__!r}, "
+            f"to_type={self.to_type.__name__!r}, "
+            f"fields={list(self.schema.keys())!r})"
+        )
+
+
+def _validate_field_mapping(key: str, value: FieldMapping) -> None:
+    """Raise ConfigurationError if *value* is not a valid field mapping."""
+    if isinstance(value, (str, Callable)):  # type: ignore[arg-type]
+        return
+    if isinstance(value, dict):
+        if "expression" not in value:
+            raise ConfigurationError(
+                f"Schema value for field '{key}' is a dict but is missing the required "
+                f"'expression' key. Got keys: {list(value.keys())!r}"
+            )
+        expr = value["expression"]
+        if not isinstance(expr, str) and not callable(expr):
+            raise ConfigurationError(
+                f"'expression' for field '{key}' must be a str or callable, "
+                f"got {type(expr).__name__!r}"
+            )
+        transform = value.get("transform")
+        if transform is not None and not callable(transform):
+            raise ConfigurationError(
+                f"'transform' for field '{key}' must be callable, "
+                f"got {type(transform).__name__!r}"
+            )
+        return
+    raise ConfigurationError(
+        f"Schema value for field '{key}' must be a str, callable, or dict; "
+        f"got {type(value).__name__!r}"
+    )
