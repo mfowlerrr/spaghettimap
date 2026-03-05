@@ -69,7 +69,7 @@ class TestBasicJmespathMapping:
         def fail_compile(_: str):
             raise AssertionError("jmespath.compile should not be called during map()")
 
-        monkeypatch.setattr("jmespath_mapper.mapper.jmespath.compile", fail_compile)
+        monkeypatch.setattr("spaghettimap.mapper.jmespath.compile", fail_compile)
         assert mapper.map(sample_user, AgeTarget).age == 30
 
 

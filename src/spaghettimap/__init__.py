@@ -4,7 +4,7 @@ from .config import MappingConfig
 from .exceptions import (
     ConfigurationError,
     FieldMappingError,
-    JmespathMapperError,
+    SpaghettimapMapperError,
     MappingError,
 )
 from .mapper import Mapper
@@ -12,7 +12,7 @@ from .mapper import Mapper
 __all__ = [
     "Mapper",
     "MappingConfig",
-    "JmespathMapperError",
+    "SpaghettimapMapperError",
     "ConfigurationError",
     "MappingError",
     "FieldMappingError",

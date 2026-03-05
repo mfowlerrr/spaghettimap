@@ -1,4 +1,4 @@
-# jmespath-mapper
+# spaghettimap
 
 A Python library for **pydantic model-to-model conversion** powered by [JMESPath](https://jmespath.org/).
 
@@ -17,16 +17,16 @@ A Python library for **pydantic model-to-model conversion** powered by [JMESPath
 ## Installation
 
 ```bash
-pip install jmespath-mapper
+pip install spaghettimap
 # or with uv
-uv add jmespath-mapper
+uv add spaghettimap
 ```
 
 ## Quick Start
 
 ```python
 from pydantic import BaseModel
-from jmespath_mapper import Mapper, MappingConfig
+from spaghettimap import Mapper, MappingConfig
 
 class Source(BaseModel):
     first_name: str
@@ -73,7 +73,7 @@ result: Target = mapper.map(source_instance, Target)
 
 ```python
 import jmespath.functions
-from jmespath_mapper import Mapper, MappingConfig
+from spaghettimap import Mapper, MappingConfig
 
 class MyFunctions(jmespath.functions.Functions):
     @jmespath.functions.signature({"types": ["string"]})
@@ -99,7 +99,7 @@ results: list[Target] = mapper.map_many(source_list, Target)
 ## Error Hierarchy
 
 ```
-JmespathMapperError
+SpaghettimapMapperError
 ├── ConfigurationError   – invalid config (bad types, missing keys, unregistered pair)
 └── MappingError         – runtime mapping failure
     └── FieldMappingError – failure for a specific field (has .field attribute)

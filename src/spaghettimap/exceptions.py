@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 
-class JmespathMapperError(Exception):
+class SpaghettimapMapperError(Exception):
     """Base exception for all jmespath-mapper errors."""
 
 
-class ConfigurationError(JmespathMapperError):
+class ConfigurationError(SpaghettimapMapperError):
     """Raised when a MappingConfig is invalid."""
 
 
-class MappingError(JmespathMapperError):
+class MappingError(SpaghettimapMapperError):
     """Raised when a mapping operation fails at runtime."""
 
 
