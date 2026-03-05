@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import jmespath
 import jmespath.exceptions
@@ -73,6 +73,22 @@ class Mapper:
         """Return the registered config for *from_type* → *to_type*, or ``None``."""
         return self._configs.get((from_type, to_type))
 
+    def _resolve_config(
+        self, from_type: type[BaseModel], to_type: type[BaseModel]
+    ) -> MappingConfig | None:
+        """Return config for *from_type*→*to_type*, allowing BaseModel ancestry fallback."""
+        config = self.get_config(from_type, to_type)
+        if config is not None:
+            return config
+
+        for base in from_type.__mro__[1:]:
+            if not _is_basemodel_subclass(base):
+                continue
+            inherited = self.get_config(cast(type[BaseModel], base), to_type)
+            if inherited is not None:
+                return inherited
+        return None
+
     # ------------------------------------------------------------------
     # Mapping
     # ------------------------------------------------------------------
@@ -100,7 +116,7 @@ class Mapper:
                 f"'to_type' must be a pydantic BaseModel subclass, got {to_type!r}"
             )
 
-        config = self._configs.get((type(source), to_type))
+        config = self._resolve_config(type(source), to_type)
         if config is None:
             raise ConfigurationError(
                 f"No mapping config registered for {type(source).__name__!r} → {to_type.__name__!r}. "
@@ -110,19 +126,20 @@ class Mapper:
         # Serialise to a plain dict; nested BaseModel instances become dicts.
         source_dict: dict[str, Any] = source.model_dump(mode="python")
 
-        jmespath_options = (
-            jmespath.Options(custom_functions=config.custom_functions)
-            if config.custom_functions is not None
-            else None
-        )
-
+        compiled_expressions = config._compiled_expressions
         result: dict[str, Any] = {
-            field: _evaluate_field_mapping(field, mapping, source_dict, jmespath_options)
+            field: _evaluate_field_mapping(
+                field,
+                mapping,
+                source_dict,
+                compiled_expressions.get(field),
+                config._jmespath_options,
+            )
             for field, mapping in config.schema.items()
         }
 
         if config.passthrough:
-            for field_name in to_type.model_fields:
+            for field_name in config._target_field_names:
                 if field_name not in result and field_name in source_dict:
                     result[field_name] = source_dict[field_name]
 
@@ -162,12 +179,19 @@ def _evaluate_field_mapping(
     field_name: str,
     mapping: FieldMapping,
     source_dict: dict[str, Any],
+    compiled_expression: Any | None,
     jmespath_options: jmespath.Options | None,
 ) -> Any:
     """Evaluate a single field mapping against *source_dict*."""
     try:
         if isinstance(mapping, str):
-            return _eval_jmespath(field_name, mapping, source_dict, jmespath_options)
+            return _eval_jmespath(
+                field_name,
+                mapping,
+                source_dict,
+                jmespath_options,
+                compiled_expression,
+            )
 
         if callable(mapping):
             return mapping(source_dict)
@@ -175,7 +199,13 @@ def _evaluate_field_mapping(
         if isinstance(mapping, dict):
             expr = mapping["expression"]
             value = (
-                _eval_jmespath(field_name, expr, source_dict, jmespath_options)
+                _eval_jmespath(
+                    field_name,
+                    expr,
+                    source_dict,
+                    jmespath_options,
+                    compiled_expression,
+                )
                 if isinstance(expr, str)
                 else expr(source_dict)
             )
@@ -197,11 +227,16 @@ def _eval_jmespath(
     expression: str,
     source_dict: dict[str, Any],
     options: jmespath.Options | None,
+    compiled_expression: Any | None = None,
 ) -> Any:
     """Compile and search a JMESPath expression with clear error messaging."""
     try:
-        compiled = jmespath.compile(expression)
-    except jmespath.exceptions.ParseError as exc:
+        compiled = (
+            compiled_expression
+            if compiled_expression is not None
+            else jmespath.compile(expression)
+        )
+    except jmespath.exceptions.JMESPathError as exc:
         raise FieldMappingError(
             field_name,
             f"Invalid JMESPath expression {expression!r}: {exc}",
@@ -209,6 +244,8 @@ def _eval_jmespath(
         ) from exc
 
     try:
+        if options is None:
+            return compiled.search(source_dict)
         return compiled.search(source_dict, options=options)
     except jmespath.exceptions.JMESPathError as exc:
         raise FieldMappingError(

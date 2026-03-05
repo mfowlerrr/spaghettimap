@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+import jmespath
+import jmespath.exceptions
 import jmespath.functions
 from pydantic import BaseModel
 
@@ -99,6 +101,13 @@ class MappingConfig:
                 )
             _validate_field_mapping(key, value)
 
+        unknown_fields = [field for field in schema if field not in to_type.model_fields]
+        if unknown_fields:
+            raise ConfigurationError(
+                f"Schema contains field(s) not present on target model {to_type.__name__!r}: "
+                f"{unknown_fields!r}"
+            )
+
         if custom_functions is not None and not isinstance(
             custom_functions, jmespath.functions.Functions
         ):
@@ -112,6 +121,13 @@ class MappingConfig:
         self.schema = schema
         self.passthrough = passthrough
         self.custom_functions = custom_functions
+        self._target_field_names = tuple(to_type.model_fields.keys())
+        self._jmespath_options = (
+            jmespath.Options(custom_functions=custom_functions)
+            if custom_functions is not None
+            else None
+        )
+        self._compiled_expressions = _compile_schema_expressions(schema)
 
     def __repr__(self) -> str:
         return (
@@ -150,3 +166,26 @@ def _validate_field_mapping(key: str, value: FieldMapping) -> None:
         f"Schema value for field '{key}' must be a str, callable, or dict; "
         f"got {type(value).__name__!r}"
     )
+
+
+def _compile_schema_expressions(schema: dict[str, FieldMapping]) -> dict[str, Any]:
+    """Pre-compile all string JMESPath expressions in *schema*."""
+    compiled: dict[str, Any] = {}
+    for key, value in schema.items():
+        if isinstance(value, str):
+            compiled[key] = _compile_expression(key, value)
+            continue
+        if isinstance(value, dict):
+            expr = value.get("expression")
+            if isinstance(expr, str):
+                compiled[key] = _compile_expression(key, expr)
+    return compiled
+
+
+def _compile_expression(field_name: str, expression: str) -> Any:
+    try:
+        return jmespath.compile(expression)
+    except jmespath.exceptions.JMESPathError as exc:
+        raise ConfigurationError(
+            f"Invalid JMESPath expression for field '{field_name}': {expression!r}: {exc}"
+        ) from exc

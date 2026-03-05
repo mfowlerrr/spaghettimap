@@ -30,18 +30,16 @@ class TestErrorCases:
         with pytest.raises(ConfigurationError, match="pydantic BaseModel subclass"):
             Mapper().map(sample_user, dict)  # type: ignore
 
-    def test_invalid_jmespath_expression_raises_field_mapping_error(self, sample_user):
+    def test_invalid_jmespath_expression_raises_configuration_error(self):
         class BadTarget(BaseModel):
             x: str
 
-        mapper = Mapper()
-        mapper.add_config(
+        with pytest.raises(ConfigurationError, match="Invalid JMESPath expression"):
             MappingConfig(
-                from_type=SourceUser, to_type=BadTarget, schema={"x": "***invalid***"}
+                from_type=SourceUser,
+                to_type=BadTarget,
+                schema={"x": "***invalid***"},
             )
-        )
-        with pytest.raises(FieldMappingError, match="Invalid JMESPath expression"):
-            mapper.map(sample_user, BadTarget)
 
     def test_pydantic_strict_type_mismatch_raises_mapping_error(self, sample_user):
         class StrictTarget(BaseModel):

@@ -10,6 +10,7 @@ A Python library for **pydantic model-to-model conversion** powered by [JMESPath
 - **Custom JMESPath functions** via `jmespath.functions.Functions` subclass
 - **Filter expressions**, multi-select hash/list, pipe expressions, wildcards, and or-expressions
 - Solid **error handling** with `ConfigurationError`, `MappingError`, and `FieldMappingError` – all with clear, field-specific messages
+- **Fail-fast config checks** for invalid JMESPath expressions and schema fields missing from the target model
 - Pydantic validators (`@field_validator`, `@model_validator`) and type coercion run on the target model automatically
 - `map_many()` for batch conversion of model lists
 

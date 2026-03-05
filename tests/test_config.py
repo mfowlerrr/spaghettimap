@@ -46,6 +46,14 @@ class TestMappingConfigValidation:
                 schema={"age": 42},  # type: ignore
             )
 
+    def test_schema_field_not_on_target_raises(self):
+        with pytest.raises(ConfigurationError, match="not present on target model"):
+            MappingConfig(
+                from_type=SourceUser,
+                to_type=TargetUser,
+                schema={"unknown_field": "age"},
+            )
+
     def test_schema_dict_missing_expression_raises(self):
         with pytest.raises(ConfigurationError, match="'expression' key"):
             MappingConfig(

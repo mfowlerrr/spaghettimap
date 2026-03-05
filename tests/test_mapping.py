@@ -43,6 +43,29 @@ class TestBasicJmespathMapping:
         result = basic_mapper.map(inactive, TargetUser)
         assert result.is_active is False
 
+    def test_registered_base_source_config_maps_subclass_source(self, basic_mapper, sample_user):
+        class ExtendedSourceUser(SourceUser):
+            internal_id: str = "u-1"
+
+        extended = ExtendedSourceUser(**sample_user.model_dump())
+        result = basic_mapper.map(extended, TargetUser)
+        assert result.full_name == "Jane Doe"
+
+    def test_jmespath_expression_not_recompiled_per_map_call(self, sample_user, monkeypatch):
+        class AgeTarget(BaseModel):
+            age: int
+
+        mapper = Mapper()
+        mapper.add_config(
+            MappingConfig(from_type=SourceUser, to_type=AgeTarget, schema={"age": "age"})
+        )
+
+        def fail_compile(_: str):
+            raise AssertionError("jmespath.compile should not be called during map()")
+
+        monkeypatch.setattr("jmespath_mapper.mapper.jmespath.compile", fail_compile)
+        assert mapper.map(sample_user, AgeTarget).age == 30
+
 
 class TestCallableMappings:
     def test_lambda_callable(self, sample_user):
