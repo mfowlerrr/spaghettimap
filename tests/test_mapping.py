@@ -197,3 +197,125 @@ class TestDictMappings:
         )
         with pytest.raises(FieldMappingError, match="transform exploded"):
             mapper.map(sample_user, BoomTarget)
+
+
+class TestPassthroughMapping:
+    """1→1 passthrough mapping – no schema required, or overrides-only schema."""
+
+    def test_pure_passthrough_no_schema(self):
+        """Omitting schema auto-maps all matching field names."""
+        class Source(BaseModel):
+            age: int
+            score: float
+            label: str
+
+        class Target(BaseModel):
+            age: int
+            score: float
+            label: str
+
+        mapper = Mapper()
+        mapper.add_config(MappingConfig(from_type=Source, to_type=Target))
+        result = mapper.map(Source(age=25, score=9.5, label="A"), Target)
+        assert result.age == 25
+        assert result.score == 9.5
+        assert result.label == "A"
+
+    def test_passthrough_skips_fields_not_in_source(self):
+        """Target fields absent from source fall back to pydantic defaults."""
+        class Source(BaseModel):
+            age: int
+
+        class Target(BaseModel):
+            age: int
+            label: str = "default"
+
+        mapper = Mapper()
+        mapper.add_config(MappingConfig(from_type=Source, to_type=Target))
+        result = mapper.map(Source(age=10), Target)
+        assert result.age == 10
+        assert result.label == "default"
+
+    def test_passthrough_with_one_override(self):
+        """schema covers only the renamed field; rest are auto-mapped."""
+        class Source(BaseModel):
+            first_name: str
+            age: int
+            score: float
+
+        class Target(BaseModel):
+            name: str   # renamed
+            age: int
+            score: float
+
+        mapper = Mapper()
+        mapper.add_config(
+            MappingConfig(
+                from_type=Source,
+                to_type=Target,
+                schema={"name": "first_name"},
+                passthrough=True,
+            )
+        )
+        result = mapper.map(Source(first_name="Alice", age=30, score=7.5), Target)
+        assert result.name == "Alice"
+        assert result.age == 30
+        assert result.score == 7.5
+
+    def test_passthrough_schema_field_takes_priority_over_auto(self):
+        """Explicit schema entry is never overwritten by passthrough."""
+        class Source(BaseModel):
+            value: str
+
+        class Target(BaseModel):
+            value: str
+
+        mapper = Mapper()
+        mapper.add_config(
+            MappingConfig(
+                from_type=Source,
+                to_type=Target,
+                schema={"value": {"expression": "value", "transform": str.upper}},
+                passthrough=True,
+            )
+        )
+        result = mapper.map(Source(value="hello"), Target)
+        assert result.value == "HELLO"   # transform applied, not raw passthrough
+
+    def test_passthrough_enabled_when_schema_is_none(self):
+        """Passing schema=None explicitly also enables passthrough."""
+        class Source(BaseModel):
+            x: int
+
+        class Target(BaseModel):
+            x: int
+
+        mapper = Mapper()
+        mapper.add_config(MappingConfig(from_type=Source, to_type=Target, schema=None))
+        assert mapper.map(Source(x=42), Target).x == 42
+
+    def test_passthrough_false_does_not_auto_map(self):
+        """Default passthrough=False (explicit schema) keeps current behaviour."""
+        class Source(BaseModel):
+            age: int
+
+        class Target(BaseModel):
+            age: int = 0
+
+        mapper = Mapper()
+        # schema={} with passthrough=False → nothing mapped → pydantic default used
+        mapper.add_config(MappingConfig(from_type=Source, to_type=Target, schema={}))
+        result = mapper.map(Source(age=99), Target)
+        assert result.age == 0   # NOT passed through
+
+    def test_mapping_config_repr_shows_passthrough(self):
+        class A(BaseModel):
+            x: int
+        class B(BaseModel):
+            x: int
+
+        config = MappingConfig(from_type=A, to_type=B)
+        assert "passthrough=True" in repr(config)
+
+        config2 = MappingConfig(from_type=A, to_type=B, schema={"x": "x"})
+        assert "passthrough=False" in repr(config2)

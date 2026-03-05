@@ -36,7 +36,9 @@ class TestErrorCases:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=BadTarget, schema={"x": "***invalid***"})
+            MappingConfig(
+                from_type=SourceUser, to_type=BadTarget, schema={"x": "***invalid***"}
+            )
         )
         with pytest.raises(FieldMappingError, match="Invalid JMESPath expression"):
             mapper.map(sample_user, BadTarget)
@@ -48,7 +50,9 @@ class TestErrorCases:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=StrictTarget, schema={"age": "age"})
+            MappingConfig(
+                from_type=SourceUser, to_type=StrictTarget, schema={"age": "age"}
+            )
         )
         with pytest.raises(MappingError, match="Pydantic validation failed"):
             mapper.map(sample_user, StrictTarget)
@@ -73,7 +77,11 @@ class TestErrorCases:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=BadTarget, schema={"problem_field": raiser})
+            MappingConfig(
+                from_type=SourceUser,
+                to_type=BadTarget,
+                schema={"problem_field": raiser},
+            )
         )
         with pytest.raises(FieldMappingError) as exc_info:
             mapper.map(sample_user, BadTarget)
@@ -88,7 +96,11 @@ class TestErrorCases:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=BadTarget, schema={"my_special_field": raiser})
+            MappingConfig(
+                from_type=SourceUser,
+                to_type=BadTarget,
+                schema={"my_special_field": raiser},
+            )
         )
         with pytest.raises(FieldMappingError, match="my_special_field"):
             mapper.map(sample_user, BadTarget)
@@ -101,7 +113,9 @@ class TestOptionalAndNoneHandling:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=T, schema={"missing": "nonexistent.path"})
+            MappingConfig(
+                from_type=SourceUser, to_type=T, schema={"missing": "nonexistent.path"}
+            )
         )
         assert mapper.map(sample_user, T).missing is None
 
@@ -109,7 +123,9 @@ class TestOptionalAndNoneHandling:
         from tests.conftest import ContactInfo, Address
 
         user = SourceUser(
-            first_name="Bob", last_name="Jones", age=25,
+            first_name="Bob",
+            last_name="Jones",
+            age=25,
             contact=ContactInfo(email="bob@example.com", phone=None),
             address=Address(street="1 St", city="Leeds", postcode="LS1 1AA"),
         )
@@ -119,7 +135,9 @@ class TestOptionalAndNoneHandling:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=T, schema={"phone": "contact.phone"})
+            MappingConfig(
+                from_type=SourceUser, to_type=T, schema={"phone": "contact.phone"}
+            )
         )
         assert mapper.map(user, T).phone is None
 
@@ -127,7 +145,9 @@ class TestOptionalAndNoneHandling:
         from tests.conftest import ContactInfo, Address
 
         user = SourceUser(
-            first_name="Bob", last_name="Jones", age=25,
+            first_name="Bob",
+            last_name="Jones",
+            age=25,
             contact=ContactInfo(email="bob@example.com"),
             address=Address(street="1 St", city="Leeds", postcode="LS1 1AA"),
             tags=[],
@@ -138,7 +158,9 @@ class TestOptionalAndNoneHandling:
 
         mapper = Mapper()
         mapper.add_config(
-            MappingConfig(from_type=SourceUser, to_type=T, schema={"tag_names": "tags[*].name"})
+            MappingConfig(
+                from_type=SourceUser, to_type=T, schema={"tag_names": "tags[*].name"}
+            )
         )
         result = mapper.map(user, T)
         # JMESPath returns None for a wildcard projection over an empty list
@@ -153,7 +175,9 @@ class TestOptionalAndNoneHandling:
                 from_type=SourceUser,
                 to_type=TargetUserDetailed,
                 schema={
-                    "full_name": {"expression": lambda d: f"{d['first_name']} {d['last_name']}"},
+                    "full_name": {
+                        "expression": lambda d: f"{d['first_name']} {d['last_name']}"
+                    },
                     "email": "contact.email",
                     "age": "age",
                     "city": "address.city",
@@ -173,12 +197,16 @@ class TestMapMany:
 
         users = [
             SourceUser(
-                first_name="Alice", last_name="Smith", age=28,
+                first_name="Alice",
+                last_name="Smith",
+                age=28,
                 contact=ContactInfo(email="alice@example.com"),
                 address=Address(street="1 A St", city="Bath", postcode="BA1 1AA"),
             ),
             SourceUser(
-                first_name="Bob", last_name="Jones", age=35,
+                first_name="Bob",
+                last_name="Jones",
+                age=35,
                 contact=ContactInfo(email="bob@example.com"),
                 address=Address(street="2 B St", city="Bristol", postcode="BS1 1BB"),
             ),
