@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.5.0 (2026-03-16)
+
+### Chores
+
+- Add MIT License to the project
+  ([`6e1af9b`](https://github.com/mfowlerrr/spaghettimap/commit/6e1af9be195932c19e635f7c8ee801a7410d478b))
+
+### Features
+
+- Update author name
+  ([`14da505`](https://github.com/mfowlerrr/spaghettimap/commit/14da50565aea0f32fe401952feba09fee4c97354))
+
+
 ## v0.4.0 (2026-03-05)
 
 ### Documentation
