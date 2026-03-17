@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.6.0 (2026-03-17)
+
+### Chores
+
+- Update project email
+  ([`0d61906`](https://github.com/mfowlerrr/spaghettimap/commit/0d6190630c167156a0f5dbc6c1fafdcb3de1d2dc))
+
+
 ## v0.5.0 (2026-03-16)
 
 ### Chores
